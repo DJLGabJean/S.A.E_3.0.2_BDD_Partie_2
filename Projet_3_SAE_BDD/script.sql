@@ -55,27 +55,24 @@ COMMIT;
 -- Création des procédures/fonctions 
 
 DELIMITER //
-CREATE PROCEDURE MajGroupe (Gpe VARCHAR(10), Forma VARCHAR(10), Eff DECIMAL(4,2))
--- Tous les paramètres sont obligatoires ; 
--- Si le groupe de la formation (Gpe, Forma) n’existe pas il est ajouté, Effectif doit 
--- être positif ; 
--- Si le groupe de la formation existe et Eff est positif, Effectif du groupe est 
--- remplacé par Eff, sinon le groupe est supprimé ainsi que toutes ses réservations
+CREATE PROCEDURE MajGroupe (Gpe VARCHAR(10), Forma VARCHAR(10), Eff DECIMAL (4,2)) 
 BEGIN
-	SELECT Groupe INTO Gpe FROM Groupes WHERE Groupe <> Gpe;
-    SELECT Forma INTO Forma FROM Groupes WHERE Formation <> Forma;
-    
-	IF Gpe AND Forma IS NULL AND Eff >= 0 THEN
-		INSERT INTO Groupes(Groupe, Formation, Effectif) VALUES(Gpe, Forma, Eff);
-	END IF;
-    
-    IF Gpe AND Forma IS NOT NULL AND Eff > 0 THEN
-		UPDATE Groupes SET Effectif = Eff WHERE Groupe = Gpe AND Formation = Forma;
-	ELSE
-		DELETE FROM Groupes, Reservation USING Groupes, Reservation WHERE Groupe = Gpe AND Formation = Forma;
-	END IF;
+    IF Gpe AND FORMA AND EFF IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Tous les paramètres sont requis';
+    ELSE
+        SELECT COUNT(*) INTO @count FROM Groupes WHERE Groupe = Gpe AND Formation = Forma;
+        IF @count = 0 AND Eff > 0 THEN
+            INSERT INTO Groupes(Groupe, Formation, Effectif) VALUES(Gpe, Forma, Eff);
+        ELSEIF @count > 0 AND Eff > 0 THEN
+            UPDATE Groupes SET Effectif = Eff WHERE Groupe = Gpe AND Formation = Forma;
+        ELSE
+            DELETE FROM Groupes WHERE Groupe = Gpe AND Formation = Forma;
+            DELETE FROM Reservation WHERE Groupe = Gpe AND Formation = Forma;
+        END IF;
+    END IF;
 END;
 //
+DELIMITER ;
 
 CREATE PROCEDURE ReservationsGroupe (Gpe VARCHAR(10), Forma VARCHAR(10))
 -- Recherche et affiche la liste chronologique des réservations d’un groupe d’une 
