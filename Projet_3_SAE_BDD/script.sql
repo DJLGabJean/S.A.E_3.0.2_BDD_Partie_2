@@ -57,7 +57,7 @@ COMMIT;
 DELIMITER //
 CREATE PROCEDURE MajGroupe (Gpe VARCHAR(10), Forma VARCHAR(10), Eff DECIMAL (4,2)) 
 BEGIN
-    IF Gpe AND FORMA AND EFF IS NULL THEN
+     IF Gpe IS NULL OR Forma IS NULL OR Eff IS NULL THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Tous les paramètres sont requis';
     ELSE
         SELECT COUNT(*) INTO @count FROM Groupes WHERE Groupe = Gpe AND Formation = Forma;
@@ -72,21 +72,44 @@ BEGIN
     END IF;
 END;
 //
-DELIMITER ;
 
 CREATE PROCEDURE ReservationsGroupe (Gpe VARCHAR(10), Forma VARCHAR(10))
--- Recherche et affiche la liste chronologique des réservations d’un groupe d’une 
--- formation (Gpe, Forma) ou de tous les groupes d’une formation si Gpe est omis. 
-
--- La liste est présentée avec les informations suivantes : Début, Fin (Début+Durée), 
--- CodeUE, NomUE, Nature, NoSalle, Gpe ; 
-
--- Si le groupe ou la formation n’existe pas, on affiche un message d’erreur ; 
-
--- Si la liste est vide, on affiche le message « Pas de réservation pour ce groupe ou 
--- cette formation ».
 BEGIN
+	DECLARE Groupe_p INT;
+	DECLARE Forma_p INT;
+    DECLARE List_vide INT;
 
+	IF Gpe IS NULL THEN
+		SELECT r.Debut, r.Debut + INTERVAL r.Duree HOUR_SECOND AS Fin, r.CodeELP, e.NomELP, r.Nature, r.NoSalle, r.Groupe
+		FROM Reservation r
+		JOIN ELP e ON r.CodeELP = e.CodeELP
+		WHERE r.Groupe = Gpe AND r.Formation = Forma
+		GROUP BY r.NoReservation;
+        
+    ELSE
+		SELECT COUNT(*) INTO Groupe_p FROM Groupes WHERE Groupe = Gpe;
+        SELECT COUNT(*) INTO Forma_p FROM Groupes WHERE Formation = Forma;
+		IF Groupe_p = 0 OR Forma_p = 0 THEN
+			SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Le groupe ou la formation n'existe pas";
+		ELSE
+			SELECT COUNT(*) INTO list_vide 
+            FROM Reservation r
+            JOIN ELP e ON r.CodeELP = e.CodeELP 
+            WHERE r.Groupe = Gpe AND r.Formation = Forma;
+            
+            IF List_vide = 0 THEN
+				SIGNAL SQLSTATE	'22002' SET MESSAGE_TEXT = "Pas de réservation pour ce groupe ou cette formation";
+                
+            ELSE
+				SELECT r.Debut, r.Debut + INTERVAL r.Duree HOUR_SECOND AS Fin, r.CodeELP, e.NomELP, r.Nature, r.NoSalle, r.Groupe
+				FROM Reservation r
+				JOIN ELP e ON r.CodeELP = e.CodeELP
+				WHERE r.Formation = Forma
+				GROUP BY r.NoReservation;
+            
+            END IF;
+		END IF;
+    END IF;
 END;
 //
 
