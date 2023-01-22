@@ -65,6 +65,8 @@ BEGIN
             INSERT INTO Groupes(Groupe, Formation, Effectif) VALUES(Gpe, Forma, Eff);
         ELSEIF @count > 0 AND Eff > 0 THEN
             UPDATE Groupes SET Effectif = Eff WHERE Groupe = Gpe AND Formation = Forma;
+		ELSEIF @count > 0 AND Eff < 0 THEN
+			SIGNAL SQLSTATE '22023' SET MESSAGE_TEXT = "L'effectif est négatif";
         ELSE
             DELETE FROM Groupes WHERE Groupe = Gpe AND Formation = Forma;
             DELETE FROM Reservation WHERE Groupe = Gpe AND Formation = Forma;
