@@ -80,6 +80,16 @@ BEGIN
 	DECLARE Groupe_p INT;
 	DECLARE Forma_p INT;
     DECLARE List_vide INT;
+    
+	DECLARE EXIT HANDLER FOR SQLSTATE '02000'
+    BEGIN
+        SELECT false;
+    END;
+
+    DECLARE EXIT HANDLER FOR SQLSTATE '22002'
+    BEGIN
+        SELECT true;
+    END;
 
 	IF Gpe IS NULL THEN
 		SELECT r.Debut, r.Debut + INTERVAL r.Duree HOUR_SECOND AS Fin, r.CodeELP, e.NomELP, r.Nature, r.NoSalle, r.Groupe
@@ -115,11 +125,23 @@ BEGIN
 END;
 //
 
--- CREATE FUNCTION EstLibre (Gpe VARCHAR(10), Forma VARCHAR(10), Debut DATE, DUREE DECIMAL(4,2)) 
--- RETURNS BOOLEAN
--- DETERMINISTIC
--- BEGIN
-
--- END;
+CREATE FUNCTION EstLibre (Gpe VARCHAR(10), Forma VARCHAR(10), Debut DATE, DUREE DECIMAL(4,2)) 
+RETURNS BOOLEAN
+DETERMINISTIC
+BEGIN
+	DECLARE Groupe_p INT; 
+	SELECT COUNT(*) INTO Groupe_p FROM Groupes WHERE Groupe = Gpe;
+    
+    IF Groupe_p = 0 THEN
+		SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Le groupe n'existe pas";
+	ELSE 
+		IF ReservationsGroupe(Gpe, Forma) = true THEN
+			SELECT "Le groupe est libre au créneau indiqué";
+		ELSE
+			SELECT "Le groupe n'est pas libre au créneau indiqué";
+            
+		END IF;
+	END IF;
+END;
 //
 DELIMITER ;

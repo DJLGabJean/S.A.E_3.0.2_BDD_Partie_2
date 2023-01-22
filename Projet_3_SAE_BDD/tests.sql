@@ -38,9 +38,9 @@ CALL ReservationsGroupe('TD1','BUT Info 1');
 -- Liste des réservations de la formation 'BUT Info 1' : 2 réservations
 CALL ReservationsGroupe(null,'BUT Info 1');
 -- Liste des réservations du groupe 'CM' de 'BUT Info P' : pas de réservation (EXCEPTION)
--- CALL ReservationsGroupe('CM','BUT Info P');
+CALL ReservationsGroupe('CM','BUT Info P');
 -- Liste des réservations du groupe 'TD3' de 'BUT Info 1' : pas de groupe ou de formation (EXCEPTION)
--- CALL ReservationsGroupe('TD3','BUT Info 1') ;
+CALL ReservationsGroupe('TD3','BUT Info 1') ;
 COMMIT;
 
 -- Fonction EstLibre
