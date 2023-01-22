@@ -1,26 +1,74 @@
+-- Suppression des données
+SELECT PRINT('Suppression des données existantes');
+DELETE FROM Reservation;
+DELETE FROM Groupes;
+DELETE FROM ELP;
+DELETE FROM Salle;
+COMMIT;
+SELECT PRINT("");
+
+-- Procédure MajGroupe 
+SELECT PRINT(" // Procédure MajGroupe //");
+SELECT PRINT("Ajout de 4 Groupes");
+CALL MajGroupe('CM','BUT Info P',20);
+CALL MajGroupe('TD1','BUT Info 1',25);
+CALL MajGroupe('TD2','BUT Info 1',25);
+CALL MajGroupe('TD3','BUT Info 1',25);
+SELECT PRINT("Modification du Groupe 'TD1' de 'BUT Info 1' (erreur : effectif<0)");
+CALL MajGroupe('TD1', 'BUT Info 1', -1);
+SELECT PRINT("Modification du Groupe 'TD3' de 'BUT Info 1' (effectif=20)");
+CALL MajGroupe('TD3','BUT Info 1',20);
+
 
 -- Insertion des données
+SELECT PRINT("Insertion des autres données pour le test");
+INSERT INTO Salle(NoSalle,Categorie,NbPlaces) VALUES('S1','Salle',30);
+INSERT INTO ELP(CodeELP,NomELP,Formation,HC,HTD,HTP) VALUES('BD1','Bases de Données 1','BUT Info 1',8,20,0);
+INSERT INTO ELP(CodeELP,NomELP,Formation,HC,HTD,HTP) VALUES('BD2','Bases de Données 2','BUT Info P',4,14,0);
+INSERT INTO Reservation(NoReservation,NoSalle,CodeELP,Groupe,Formation,Nature,Debut,Duree) VALUES(1,'S1','BD1','TD3','BUT Info 1','TD','2022-12-12 08:30','02:00');
+UPDATE ELP SET HTDRes=HTDRes+2 WHERE CodeUE='BD1';
+COMMIT;
 
-INSERT INTO Salle(NoSalle, Categorie, NbPlaces) VALUES ('S1', 'Salle TP', 20),('A1', 'Amphi', 120),('S2', 'Salle', 40);
-INSERT INTO ELP(CodeELP, NomELP, Formation, HC, HTD, HTP) VALUES ('BD1', 'Introduction aux Bases de Données', 'BUT Info 1', 8, 20, 0),('Algo1', 'Algorithmique 1', 'BUT Info 1', 25, 20, 0),('BD2', 'Bases de Données 2', 'BUT Info P', 4, 14, 0);
-INSERT INTO Groupes(Groupe, Formation, Effectif) VALUES ('CM', 'BUT Info P', 20),('TD1', 'BUT Info 1', 25),('TD2', 'BUT Info 1', 25);
-INSERT INTO Reservation(NoSalle, CodeELP, Groupe, Formation, Nature, Debut, Duree) 
-VALUES ('S1','BD1', 'TD1','BUT Info 1','TD','2022-12-12 08:30','02:00'),
-('S1','BD1','TD2','BUT Info 1','TD','2022-12-12 10:30','02:00'),
-('A1','BD1','CM','BUT Info 1','Cours','2022-11-15 14:00','02:00'); 
+-- Suppresion du Groupe TD3 de BUT Info 1 et ses réservations
+
+SELECT PRINT("Suppression du Groupe 'TD3' de 'BUT Info 1' et ses réservations");
+CALL MajGroupe('TD3','BUT Info 1',0);
+SELECT PRINT(""); 
+SELECT PRINT("Insertion des autres données pour le test");
+INSERT INTO Reservation(NoReservation,NoSalle,CodeUE,Groupe,Formation,Nature,Debut,Duree) VALUES(2,'S1','BD1','TD1','BUT Info 1','TD','2022-12-12 08:30','02:00');
+INSERT INTO Reservation(NoReservation,NoSalle,CodeUE,Groupe,Formation,Nature,Debut,Duree) VALUES(3,'S1','BD1','TD2','BUT Info 1','TD','2022-12-12 10:30','02:00');
+UPDATE ELP SET HTDRes=HTDRes+4 WHERE CodeUE='BD1'; -- 2h TD * 2 séances = 4h
+COMMIT;
+SELECT PRINT("");
 
 
--- CALL MajGroupe('CM', 'BUT Info P', 50); -- Test d'un groupe qui existe et qui change l'effectif dans la table Groupes
--- CALL MajGroupe('TD3','BUT Info 1', 25); -- Test d'un groupe qui existe pas et qui est ajouté dans la table Groupes
--- CALL MajGroupe('CM', 'BUT Info P', -2); -- Test d'un groupe qui existe et qui est supprimé de la table Groupes ainsi que ses réservations dans la table Reservation car son est Effectif est négatif 
 
--- CALL ReservationsGroupe();
--- SELECT EstLibre();
-
-
--- A utiliser avec les fonctions et procédures 
-
--- Salle  Exemple : ('S3','Salle',40);
--- ELP  Exemple : ('CPOOA','Conception et Programmation Objet','L3I',14,15,16);
--- Groupes  Exemple : ('TD3','BUT Info 1',25);
--- Reservationreservation  Exemple : ('S1','BD1','TD3','BUT Info 1','TD',TO_DATE('13/12/2022 1400','DD/MM/YYYY HH24MI'),120);
+prompt
+prompt // Procédure ReservationsGroupe //
+prompt Liste des réservations du groupe 'TD1' de 'BUT Info 1' : 1 réservation 
+EXECUTE ReservationsGroupe('TD1','BUT Info 1') ;
+prompt Liste des réservations de la formation 'BUT Info 1' : 2 réservations
+EXECUTE ReservationsGroupe(null,'BUT Info 1') ;
+prompt Liste des réservations du groupe 'CM' de 'BUT Info P' : pas de réservation
+EXECUTE ReservationsGroupe('CM','BUT Info P') ;
+prompt Liste des réservations du groupe 'TD3' de 'BUT Info 1' : pas de groupe ou de formation
+EXECUTE ReservationsGroupe('TD3','BUT Info 1') ;
+prompt 
+prompt // Fonction EstLibre //
+BEGIN
+-- Le groupe 'TD1' de 'BUT Info 1' est-il libre le 12/12/22 à 10h30 pour 2h ? OUI
+IF EstLibre('TD1', 'BUT Info 1', TO_DATE('12/12/2022 1030','DD/MM/YYYY HH24MI'),120) 
+THEN DBMS_OUTPUT.PUT_LINE('OUI');
+ELSE DBMS_OUTPUT.PUT_LINE('NON');
+END IF;
+-- Le groupe 'TD2' de 'BUT Info 1' est-il libre le 12/12/22 à 10h30 pour 2h ? NON
+IF EstLibre('TD2', 'BUT Info 1', TO_DATE('12/12/2022 1030','DD/MM/YYYY HH24MI'),120)  
+THEN DBMS_OUTPUT.PUT_LINE('OUI');
+ELSE DBMS_OUTPUT.PUT_LINE('NON');
+END IF;
+-- Le groupe 'TD3' de 'BUT Info 1' est-il libre le 12/12/22 à 10h30 pour 2h ? : Groupe inexistant
+IF EstLibre('TD3', 'BUT Info 1', TO_DATE('12/12/2022 1030','DD/MM/YYYY HH24MI'),120)  
+THEN DBMS_OUTPUT.PUT_LINE('OUI');
+ELSE DBMS_OUTPUT.PUT_LINE('NON');
+END IF;
+END;
