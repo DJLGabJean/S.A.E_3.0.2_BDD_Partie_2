@@ -85,7 +85,7 @@ BEGIN
 		SELECT r.Debut, r.Debut + INTERVAL r.Duree HOUR_SECOND AS Fin, r.CodeELP, e.NomELP, r.Nature, r.NoSalle, r.Groupe
 		FROM Reservation r
 		JOIN ELP e ON r.CodeELP = e.CodeELP
-		WHERE r.Groupe = Gpe AND r.Formation = Forma
+		WHERE r.Formation = Forma
 		GROUP BY r.NoReservation;
         
     ELSE
@@ -106,7 +106,7 @@ BEGIN
 				SELECT r.Debut, r.Debut + INTERVAL r.Duree HOUR_SECOND AS Fin, r.CodeELP, e.NomELP, r.Nature, r.NoSalle, r.Groupe
 				FROM Reservation r
 				JOIN ELP e ON r.CodeELP = e.CodeELP
-				WHERE r.Formation = Forma
+				WHERE r.Groupe = Gpe AND r.Formation = Forma
 				GROUP BY r.NoReservation;
             
             END IF;
