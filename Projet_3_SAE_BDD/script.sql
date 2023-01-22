@@ -129,19 +129,16 @@ CREATE FUNCTION EstLibre (Gpe VARCHAR(10), Forma VARCHAR(10), Debut DATE, DUREE 
 RETURNS BOOLEAN
 DETERMINISTIC
 BEGIN
-	DECLARE Groupe_p INT; 
-	SELECT COUNT(*) INTO Groupe_p FROM Groupes WHERE Groupe = Gpe;
+    DECLARE Groupe_p INT;
+    DECLARE res BOOLEAN;
+    SELECT COUNT(*) INTO Groupe_p FROM Groupes WHERE Groupe = Gpe;
     
     IF Groupe_p = 0 THEN
-		SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Le groupe n'existe pas";
-	ELSE 
-		IF ReservationsGroupe(Gpe, Forma) = true THEN
-			SELECT "Le groupe est libre au créneau indiqué";
-		ELSE
-			SELECT "Le groupe n'est pas libre au créneau indiqué";
-            
-		END IF;
-	END IF;
+        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Le groupe n'existe pas";
+    ELSE 
+        SET res = ReservationsGroupe(Gpe, Forma, Debut, DUREE);
+        RETURN res;
+    END IF;
 END;
 //
 DELIMITER ;
