@@ -58,7 +58,7 @@ DELIMITER //
 CREATE PROCEDURE MajGroupe (Gpe VARCHAR(10), Forma VARCHAR(10), Eff DECIMAL (4,2)) 
 BEGIN
      IF Gpe IS NULL OR Forma IS NULL OR Eff IS NULL THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Tous les paramètres sont requis';
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Tous les paramètres sont requis";
     ELSE
         SELECT COUNT(*) INTO @count FROM Groupes WHERE Groupe = Gpe AND Formation = Forma;
         IF @count = 0 AND Eff > 0 THEN
@@ -77,20 +77,11 @@ END;
 
 CREATE PROCEDURE ReservationsGroupe (Gpe VARCHAR(10), Forma VARCHAR(10))
 BEGIN
+    
 	DECLARE Groupe_p INT;
 	DECLARE Forma_p INT;
     DECLARE List_vide INT;
     
-	DECLARE EXIT HANDLER FOR SQLSTATE '02000'
-    BEGIN
-        SELECT false;
-    END;
-
-    DECLARE EXIT HANDLER FOR SQLSTATE '22002'
-    BEGIN
-        SELECT true;
-    END;
-
 	IF Gpe IS NULL THEN
 		SELECT r.Debut, r.Debut + INTERVAL r.Duree HOUR_SECOND AS Fin, r.CodeELP, e.NomELP, r.Nature, r.NoSalle, r.Groupe
 		FROM Reservation r
@@ -102,7 +93,7 @@ BEGIN
 		SELECT COUNT(*) INTO Groupe_p FROM Groupes WHERE Groupe = Gpe;
         SELECT COUNT(*) INTO Forma_p FROM Groupes WHERE Formation = Forma;
 		IF Groupe_p = 0 OR Forma_p = 0 THEN
-			SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Le groupe ou la formation n'existe pas";
+			SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Groupe ou formation inexistant(e)";
 		ELSE
 			SELECT COUNT(*) INTO list_vide 
             FROM Reservation r
@@ -125,20 +116,31 @@ BEGIN
 END;
 //
 
-CREATE FUNCTION EstLibre (Gpe VARCHAR(10), Forma VARCHAR(10), Debut DATE, DUREE DECIMAL(4,2)) 
+CREATE FUNCTION EstLibre (Gpe VARCHAR(10), Forma VARCHAR(10), Debut DATETIME, Duree TIME)
 RETURNS BOOLEAN
 DETERMINISTIC
-BEGIN
+BEGIN    
     DECLARE Groupe_p INT;
-    DECLARE res BOOLEAN;
+    DECLARE List_vide INT;
+    DECLARE Res BOOLEAN;
+    
     SELECT COUNT(*) INTO Groupe_p FROM Groupes WHERE Groupe = Gpe;
     
     IF Groupe_p = 0 THEN
-        SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Le groupe n'existe pas";
+        SIGNAL SQLSTATE '02001' SET MESSAGE_TEXT = "Groupe inexistant";
     ELSE 
-        SET res = ReservationsGroupe(Gpe, Forma, Debut, DUREE);
-        RETURN res;
-    END IF;
+		SELECT COUNT(*) INTO list_vide 
+		FROM Reservation r
+		WHERE r.Groupe = Gpe AND r.Formation = Forma AND r.Debut = Debut AND r.Duree = Duree;
+        
+		IF List_vide = 0 THEN
+			SET Res = true;
+			RETURN Res;
+        ELSE 
+			SET Res = false;
+			RETURN Res;
+		END IF;
+	END IF;
 END;
 //
 DELIMITER ;

@@ -1,3 +1,25 @@
+DROP PROCEDURE IF EXISTS test;
+
+DELIMITER //
+CREATE PROCEDURE test()
+BEGIN
+
+DECLARE CONTINUE HANDLER FOR SQLSTATE '45000'
+BEGIN
+END;
+DECLARE CONTINUE HANDLER FOR SQLSTATE '22023'
+BEGIN
+END;
+DECLARE CONTINUE HANDLER FOR SQLSTATE '02000'
+BEGIN
+END;
+DECLARE CONTINUE HANDLER FOR SQLSTATE '22002'
+BEGIN
+END;
+DECLARE CONTINUE HANDLER FOR SQLSTATE '02001'
+BEGIN
+END;
+
 -- Suppression des données
 DELETE FROM Reservation;
 DELETE FROM Groupes;
@@ -10,7 +32,7 @@ CALL MajGroupe('CM','BUT Info P',20);
 CALL MajGroupe('TD1','BUT Info 1',25);
 CALL MajGroupe('TD2','BUT Info 1',25);
 CALL MajGroupe('TD3','BUT Info 1',25);
--- CALL MajGroupe('TD1', 'BUT Info 1', -1); (EXCEPTION)
+CALL MajGroupe('TD1', 'BUT Info 1', -1); -- (EXCEPTION)
 CALL MajGroupe('TD3','BUT Info 1',20);
 COMMIT;
 
@@ -40,28 +62,33 @@ CALL ReservationsGroupe(null,'BUT Info 1');
 -- Liste des réservations du groupe 'CM' de 'BUT Info P' : pas de réservation (EXCEPTION)
 CALL ReservationsGroupe('CM','BUT Info P');
 -- Liste des réservations du groupe 'TD3' de 'BUT Info 1' : pas de groupe ou de formation (EXCEPTION)
-CALL ReservationsGroupe('TD3','BUT Info 1') ;
+CALL ReservationsGroupe('TD3','BUT Info 1');
 COMMIT;
 
 -- Fonction EstLibre
--- SELECT PRINT("// Fonction EstLibre //")
 
--- DELIMITER //
--- BEGIN
 -- Le groupe 'TD1' de 'BUT Info 1' est-il libre le 12/12/22 à 10h30 pour 2h ? OUI
--- IF EstLibre('TD1', 'BUT Info 1', TO_DATE('12/12/2022 1030','DD/MM/YYYY HH24MI'),120) THEN DBMS_OUTPUT.PUT_LINE('OUI')
--- ELSE DBMS_OUTPUT.PUT_LINE('NON');
--- END IF;
+IF EstLibre('TD1', 'BUT Info 1', '2022-12-12','02:00') THEN
+	SELECT ("OUI");
+ELSE 
+	SELECT ("NON");
+END IF;
 -- Le groupe 'TD2' de 'BUT Info 1' est-il libre le 12/12/22 à 10h30 pour 2h ? NON
--- IF EstLibre('TD2', 'BUT Info 1', TO_DATE('12/12/2022 1030','DD/MM/YYYY HH24MI'),120)  
--- THEN DBMS_OUTPUT.PUT_LINE('OUI');
--- ELSE DBMS_OUTPUT.PUT_LINE('NON');
--- END IF;
+IF EstLibre('TD2', 'BUT Info 1', '2022-12-12 10:30','02:00') THEN 
+	SELECT ("OUI");
+ELSE 
+	SELECT ("NON");
+END IF;
 -- Le groupe 'TD3' de 'BUT Info 1' est-il libre le 12/12/22 à 10h30 pour 2h ? : Groupe inexistant
--- IF EstLibre('TD3', 'BUT Info 1', TO_DATE('12/12/2022 1030','DD/MM/YYYY HH24MI'),120)  
--- THEN DBMS_OUTPUT.PUT_LINE('OUI');
--- ELSE DBMS_OUTPUT.PUT_LINE('NON');
--- END IF;
--- END;
--- //
--- DELIMITER ;
+IF EstLibre('TD3', 'BUT Info 1', '2022-12-12 10:30','02:00') THEN 
+	SELECT ("OUI");
+ELSE 
+	SELECT ("NON");
+END IF;
+END;
+//
+DELIMITER ;
+
+CALL test();
+
+
