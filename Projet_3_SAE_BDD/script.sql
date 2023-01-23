@@ -44,7 +44,7 @@ CREATE TABLE Reservation (NoReservation INT AUTO_INCREMENT PRIMARY KEY,
 			  Formation VARCHAR(15) REFERENCES ELP(Formation),
 			  Nature VARCHAR(15) NOT NULL,
 			  Debut DATETIME,
-			  Duree TIME
+			  Duree INT
 			  );
 
 
@@ -58,7 +58,7 @@ DELIMITER //
 CREATE PROCEDURE MajGroupe (Gpe VARCHAR(10), Forma VARCHAR(10), Eff DECIMAL (4,2)) 
 BEGIN
      IF Gpe IS NULL OR Forma IS NULL OR Eff IS NULL THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Tous les paramètres sont requis";
+        SELECT ("Tous les paramètres sont requis");
     ELSE
         SELECT COUNT(*) INTO @count FROM Groupes WHERE Groupe = Gpe AND Formation = Forma;
         IF @count = 0 AND Eff > 0 THEN
@@ -66,7 +66,7 @@ BEGIN
         ELSEIF @count > 0 AND Eff > 0 THEN
             UPDATE Groupes SET Effectif = Eff WHERE Groupe = Gpe AND Formation = Forma;
 		ELSEIF @count > 0 AND Eff < 0 THEN
-			SIGNAL SQLSTATE '22023' SET MESSAGE_TEXT = "L'effectif est négatif";
+			SELECT ("L'effectif est négatif");
         ELSE
             DELETE FROM Groupes WHERE Groupe = Gpe AND Formation = Forma;
             DELETE FROM Reservation WHERE Groupe = Gpe AND Formation = Forma;
@@ -81,9 +81,9 @@ BEGIN
 	DECLARE Groupe_p INT;
 	DECLARE Forma_p INT;
     DECLARE List_vide INT;
-    
+
 	IF Gpe IS NULL THEN
-		SELECT r.Debut, r.Debut + INTERVAL r.Duree HOUR_SECOND AS Fin, r.CodeELP, e.NomELP, r.Nature, r.NoSalle, r.Groupe
+		SELECT r.Debut, CONVERT(r.Debut + (CONVERT((CONCAT(r.Duree DIV 60, ':', r.Duree MOD 60)), TIME)),DATETIME) AS Fin, r.CodeELP, e.NomELP, r.Nature, r.NoSalle, r.Groupe
 		FROM Reservation r
 		JOIN ELP e ON r.CodeELP = e.CodeELP
 		WHERE r.Formation = Forma
@@ -93,7 +93,7 @@ BEGIN
 		SELECT COUNT(*) INTO Groupe_p FROM Groupes WHERE Groupe = Gpe;
         SELECT COUNT(*) INTO Forma_p FROM Groupes WHERE Formation = Forma;
 		IF Groupe_p = 0 OR Forma_p = 0 THEN
-			SIGNAL SQLSTATE '02000' SET MESSAGE_TEXT = "Groupe ou formation inexistant(e)";
+			SELECT ("Groupe ou formation inexistant(e)");
 		ELSE
 			SELECT COUNT(*) INTO list_vide 
             FROM Reservation r
@@ -101,10 +101,10 @@ BEGIN
             WHERE r.Groupe = Gpe AND r.Formation = Forma;
             
             IF List_vide = 0 THEN
-				SIGNAL SQLSTATE	'22002' SET MESSAGE_TEXT = "Pas de réservation pour ce groupe ou cette formation";
+				SELECT ("Pas de réservation pour ce groupe ou cette formation");
                 
             ELSE
-				SELECT r.Debut, r.Debut + INTERVAL r.Duree HOUR_SECOND AS Fin, r.CodeELP, e.NomELP, r.Nature, r.NoSalle, r.Groupe
+				SELECT r.Debut, CONVERT(r.Debut + (CONVERT((CONCAT(r.Duree DIV 60, ':', r.Duree MOD 60)), TIME)),DATETIME) AS Fin, r.CodeELP, e.NomELP, r.Nature, r.NoSalle, r.Groupe
 				FROM Reservation r
 				JOIN ELP e ON r.CodeELP = e.CodeELP
 				WHERE r.Groupe = Gpe AND r.Formation = Forma
@@ -116,29 +116,28 @@ BEGIN
 END;
 //
 
-CREATE FUNCTION EstLibre (Gpe VARCHAR(10), Forma VARCHAR(10), Debut DATETIME, Duree TIME)
+CREATE FUNCTION EstLibre (Gpe VARCHAR(10), Forma VARCHAR(10), Debut DATETIME, Duree INT)
 RETURNS BOOLEAN
 DETERMINISTIC
 BEGIN    
+	
     DECLARE Groupe_p INT;
     DECLARE List_vide INT;
-    DECLARE Res BOOLEAN;
+    DECLARE Duree_Heure INT;
     
     SELECT COUNT(*) INTO Groupe_p FROM Groupes WHERE Groupe = Gpe;
     
     IF Groupe_p = 0 THEN
-        SIGNAL SQLSTATE '02001' SET MESSAGE_TEXT = "Groupe inexistant";
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Groupe inexistant";
     ELSE 
 		SELECT COUNT(*) INTO list_vide 
 		FROM Reservation r
 		WHERE r.Groupe = Gpe AND r.Formation = Forma AND r.Debut = Debut AND r.Duree = Duree;
         
 		IF List_vide = 0 THEN
-			SET Res = true;
-			RETURN Res;
+			RETURN TRUE;
         ELSE 
-			SET Res = false;
-			RETURN Res;
+			RETURN FALSE;
 		END IF;
 	END IF;
 END;
