@@ -1,3 +1,6 @@
+-- LEMAIRE Jean-Gabriel 
+
+
 -- Suppression des tables et des constraintes associés
 
 DROP TABLE IF EXISTS Salle CASCADE;

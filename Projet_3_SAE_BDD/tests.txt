@@ -1,3 +1,6 @@
+-- LEMAIRE Jean-Gabriel
+
+
 DROP PROCEDURE IF EXISTS test;
 
 DELIMITER //
