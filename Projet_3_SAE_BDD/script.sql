@@ -58,7 +58,7 @@ DELIMITER //
 CREATE PROCEDURE MajGroupe (Gpe VARCHAR(10), Forma VARCHAR(10), Eff DECIMAL (4,2)) 
 BEGIN
      IF Gpe IS NULL OR Forma IS NULL OR Eff IS NULL THEN
-        SELECT ("Tous les paramètres sont requis");
+        SELECT ("Tous les paramètres sont obligatoires");
     ELSE
         SELECT COUNT(*) INTO @count FROM Groupes WHERE Groupe = Gpe AND Formation = Forma;
         IF @count = 0 AND Eff > 0 THEN
@@ -80,7 +80,7 @@ BEGIN
     
 	DECLARE Groupe_p INT;
 	DECLARE Forma_p INT;
-    DECLARE List_vide INT;
+    DECLARE Liste_p INT;
 
 	IF Gpe IS NULL THEN
 		SELECT r.Debut, CONVERT(r.Debut + (CONVERT((CONCAT(r.Duree DIV 60, ':', r.Duree MOD 60)), TIME)),DATETIME) AS Fin, r.CodeELP, e.NomELP, r.Nature, r.NoSalle, r.Groupe
@@ -95,12 +95,12 @@ BEGIN
 		IF Groupe_p = 0 OR Forma_p = 0 THEN
 			SELECT ("Groupe ou formation inexistant(e)");
 		ELSE
-			SELECT COUNT(*) INTO list_vide 
+			SELECT COUNT(*) INTO Liste_p
             FROM Reservation r
             JOIN ELP e ON r.CodeELP = e.CodeELP 
             WHERE r.Groupe = Gpe AND r.Formation = Forma;
             
-            IF List_vide = 0 THEN
+            IF Liste_p = 0 THEN
 				SELECT ("Pas de réservation pour ce groupe ou cette formation");
                 
             ELSE
@@ -122,7 +122,7 @@ DETERMINISTIC
 BEGIN    
 	
     DECLARE Groupe_p INT;
-    DECLARE List_vide INT;
+    DECLARE Liste_p INT;
     DECLARE Duree_Heure INT;
     
     SELECT COUNT(*) INTO Groupe_p FROM Groupes WHERE Groupe = Gpe;
@@ -130,11 +130,11 @@ BEGIN
     IF Groupe_p = 0 THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = "Groupe inexistant";
     ELSE 
-		SELECT COUNT(*) INTO list_vide 
+		SELECT COUNT(*) INTO Liste_p 
 		FROM Reservation r
 		WHERE r.Groupe = Gpe AND r.Formation = Forma AND r.Debut = Debut AND r.Duree = Duree;
         
-		IF List_vide = 0 THEN
+		IF Liste_p = 0 THEN
 			RETURN TRUE;
         ELSE 
 			RETURN FALSE;
