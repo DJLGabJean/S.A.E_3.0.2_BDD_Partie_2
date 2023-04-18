@@ -1,2 +1,2 @@
 # SAE_3.0.4_BDD_Partie_2
-C'est la SAE de Chelghoum ta grand mère ses morts
+Projet SAE sur la gestion de groupes de formations ainsi que leurs réservations
